@@ -5,9 +5,30 @@ agent:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
-  - name: 'Block #1'
+  - name: Build
     task:
       jobs:
-        - name: 'Job #1'
+        - name: Build
           commands:
             - checkout
+            - cache restore
+            - 'mvn -q package jmeter:configure -Dmaven.test.skip=true'
+            - cache store
+  - name: Tests
+    task:
+      jobs:
+        - name: Unit test
+          commands:
+            - checkout
+            - cache restore
+            - mvn -q test-compile -Dmaven.test.skip=true
+  - name: Performance Tests
+    task:
+      jobs:
+        - name: Benchmark
+          commands:
+            - java -version
+            - java -jar target/spring-pipeline-demo.jar > /dev/null &
+            - sleep 20
+            - 'mvn -q jmeter:jmeter'
+            - 'mvn jmeter:results'
